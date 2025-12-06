@@ -1,6 +1,7 @@
 name: Continuous Integration
 
 on:
+  workflow_dispatch:
   pull_request:
     branches:
       - main
@@ -55,10 +56,12 @@ jobs:
 
       - name: Test Local Action
         id: test-action
+        env:
+          LIBLAB_ENVIRONMENT: ${{ secrets.LIBLAB_ENVIRONMENT }}
         uses: ./
         with:
-          liblab_token: 'some-token'
-          github_token: 'some-token'
+          liblab_token: ${{ secrets.LIBLAB_TOKEN }}
+          liblab_github_token: ${{ secrets.LIBLAB_GITHUB_TOKEN }}
 
       - name: Print Output
         id: output

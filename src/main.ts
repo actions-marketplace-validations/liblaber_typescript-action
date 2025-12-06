@@ -1,4 +1,16 @@
-import * as core from '@actions/core'
+import * as core from '@actions/core';
+import { setLanguagesForUpdate } from './set-languages-for-update';
+import { cmd } from './cmd';
+
+const LIBLAB_TOKEN_INPUT_KEY = 'liblab_token';
+
+const LIBLAB_GITHUB_TOKEN_INPUT_KEY = 'liblab_github_token';
+
+const LIBLAB_GITHUB_TOKEN_ENV_VAR_NAME = 'LIBLAB_GITHUB_TOKEN';
+
+const LIBLAB_TOKEN_ENV_VAR_NAME = 'LIBLAB_TOKEN';
+
+const LIBLAB_CI_ENV_VAR_NAME = 'LIBLAB_CI';
 
 /**
  * The main function for the action.
@@ -6,20 +18,48 @@ import * as core from '@actions/core'
  */
 export async function run(): Promise<void> {
   try {
-    const liblabToken: string = core.getInput('liblab_token', {
+    const liblabToken: string = core.getInput(LIBLAB_TOKEN_INPUT_KEY, {
       required: true
-    })
-    const githubToken: string = core.getInput('github_token', {
-      required: true
-    })
+    });
+    const liblabGithubToken: string = core.getInput(
+      LIBLAB_GITHUB_TOKEN_INPUT_KEY,
+      {
+        required: true
+      }
+    );
 
-    core.exportVariable('LIBLAB_TOKEN', liblabToken)
-    core.exportVariable('GITHUB_TOKEN', githubToken)
+    core.exportVariable(LIBLAB_TOKEN_ENV_VAR_NAME, liblabToken);
+    core.exportVariable(LIBLAB_GITHUB_TOKEN_ENV_VAR_NAME, liblabGithubToken);
+    core.exportVariable(LIBLAB_CI_ENV_VAR_NAME, true);
 
-    // Set outputs for other workflow steps to use
-    core.setOutput('status', 'success')
+    const languagesToUpdate = await setLanguagesForUpdate();
+    if (languagesToUpdate.length === 0) {
+      logInfoWithStars('No languages need an update. Skipping the builds.');
+      core.setOutput('status', 'skipped');
+      return;
+    }
+    logInfoWithStars(
+      `Languages that need SDK update: ${languagesToUpdate.join(', ')}`
+    );
+
+    logInfoWithStars('Building SDKs');
+    await cmd('npx', '--yes', 'liblab', 'build', '--yes');
+    logInfoWithStars('Finished building SDKs');
+
+    logInfoWithStars('Publishing PRs');
+    await cmd('npx', '--yes', 'liblab', 'pr');
+    logInfoWithStars('Finished publishing PRs');
+
+    core.setOutput('status', `success`);
   } catch (error) {
     // Fail the workflow run if an error occurs
-    if (error instanceof Error) core.setFailed(error.message)
+    if (error instanceof Error) {
+      core.setOutput('status', 'failed');
+      core.setFailed(error.message);
+    }
   }
+}
+
+function logInfoWithStars(text: string): void {
+  core.info(`************ ${text} ************`);
 }

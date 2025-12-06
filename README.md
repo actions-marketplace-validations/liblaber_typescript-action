@@ -14,10 +14,10 @@ liblab.
 This is a simple way of keeping your SDKs up to date with the latest liblab
 releases.
 
-For more information about GitHub integration with liblab, check our docs:
-https://developers.liblab.com/tutorials/integrate-with-github-actions
+For more information about GitHub integration with liblab, check
+[our docs](https://developers.liblab.com/tutorials/integrate-with-github-actions).
 
-## Usage:
+## Usage
 
 Add this workflow to your control repository:
 
@@ -36,8 +36,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Generate SDKs and publish PRs
-        #        uses: liblaber/sdk-updates@v1
+        uses: liblaber/sdk-updates@v1.0.0
         with:
           liblab_token: ${{ secrets.LIBLAB_TOKEN }}
-          github_token: ${{ secrets.LIBLAB_GITHUB_TOKEN }}
+          liblab_github_token: ${{ secrets.LIBLAB_GITHUB_TOKEN }}
 ```
